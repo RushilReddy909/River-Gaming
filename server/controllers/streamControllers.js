@@ -4,7 +4,20 @@ import streamModel from "../models/streamModel.js";
 const createStream = async (req, res) => {
   try {
     const streamId = uuidv4();
-    const newStream = new streamModel({ streamId });
+
+    const {
+      title = "Untitled Stream",
+      thumbnailUrl = "",
+      youtubeEmbedUrl = "",
+    } = req.body;
+
+    const newStream = new streamModel({
+      streamId,
+      title,
+      thumbnailUrl,
+      youtubeEmbedUrl,
+    });
+
     await newStream.save();
 
     res.status(201).json({
@@ -16,7 +29,7 @@ const createStream = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Server error creating stream",
-      error: err,
+      error: err.message,
     });
   }
 };
@@ -41,9 +54,26 @@ const getViewerCount = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Server error finding stream",
-      error: err,
+      error: err.message,
     });
   }
 };
 
-export { createStream, getViewerCount };
+const getAllStreams = async (req, res) => {
+  try {
+    const streams = await streamModel.find({}, "-viewers -__v");
+    res.status(200).json({
+      success: true,
+      message: "All streams retrieved",
+      streams,
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: "Server error retrieving streams",
+      error: err.message,
+    });
+  }
+};
+
+export { createStream, getViewerCount, getAllStreams };

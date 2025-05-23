@@ -1,84 +1,122 @@
 import React, { useEffect, useState } from "react";
-import { io } from "socket.io-client";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
 
-const SOCKET_SERVER_URL = "http://localhost:5000"; // change to your backend URL
+const quizSchema = z.object({
+  question: z.string().min(1, "Question is required"),
+  options: z.array(z.string().min(1, "Option is required")).length(4),
+});
 
-const AdminQuiz = ({ streamId }) => {
-  const [socket, setSocket] = useState(null);
-  const [question, setQuestion] = useState("");
-  const [options, setOptions] = useState(["", "", "", ""]);
+const AdminQuiz = ({ streamId, socket }) => {
   const [results, setResults] = useState([]);
+  const [isOpen, setIsOpen] = useState(false);
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm({
+    resolver: zodResolver(quizSchema),
+    defaultValues: {
+      question: "",
+      options: ["", "", "", ""],
+    },
+  });
 
   useEffect(() => {
-    const socketClient = io(SOCKET_SERVER_URL);
-    setSocket(socketClient);
+    if (!socket) return;
 
-    // Listen for quiz results
-    socketClient.on("quiz_results", (data) => {
+    const handleResults = (data) => {
       setResults((prev) => [...prev, data]);
-    });
-
-    // Cleanup
-    return () => {
-      socketClient.disconnect();
     };
-  }, []);
 
-  const handleOptionChange = (idx, value) => {
-    const newOptions = [...options];
-    newOptions[idx] = value;
-    setOptions(newOptions);
-  };
+    socket.on("quiz_results", handleResults);
 
-  const startQuiz = () => {
-    if (!question || options.some((opt) => !opt)) {
-      alert("Please fill all fields");
-      return;
-    }
+    return () => {
+      socket.off("quiz_results", handleResults);
+    };
+  }, [socket]);
 
+  const startQuiz = (data) => {
     socket.emit("start_quiz", {
       streamId,
       quiz: {
-        question,
-        options,
+        question: data.question,
+        options: data.options,
       },
     });
 
-    setQuestion("");
-    setOptions(["", "", "", ""]);
-    setResults([]); // reset previous results
+    reset();
+    setResults([]);
+    setIsOpen(false);
   };
 
   return (
-    <div style={{ padding: "1rem", border: "1px solid gray" }}>
-      <h3>Start Quiz</h3>
-      <input
-        type="text"
-        placeholder="Question"
-        value={question}
-        onChange={(e) => setQuestion(e.target.value)}
-        style={{ width: "100%", marginBottom: "0.5rem" }}
-      />
-      {options.map((opt, idx) => (
-        <input
-          key={idx}
-          type="text"
-          placeholder={`Option ${idx + 1}`}
-          value={opt}
-          onChange={(e) => handleOptionChange(idx, e.target.value)}
-          style={{ width: "100%", marginBottom: "0.5rem" }}
-        />
-      ))}
-      <button onClick={startQuiz}>Start Quiz</button>
+    <div className="space-y-4">
+      <Dialog open={isOpen} onOpenChange={setIsOpen}>
+        <DialogTrigger asChild>
+          <Button className="font-semibold">Start Quiz</Button>
+        </DialogTrigger>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Start a New Quiz</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleSubmit(startQuiz)} className="space-y-2">
+            <Input
+              placeholder="Enter quiz question"
+              {...register("question")}
+              className="mb-4"
+            />
+            {errors.question && (
+              <p className="text-sm text-red-500">{errors.question.message}</p>
+            )}
 
-      <h4>Quiz Results (Real-time):</h4>
-      <ul>
-        {results.map(({ userId, answer }, idx) => (
-          <li key={idx}>
-            User <b>{userId}</b> answered: {answer}
-          </li>
-        ))}
-      </ul>
+            <div className="grid grid-cols-2 gap-4">
+              {Array.from({ length: 4 }).map((_, idx) => (
+                <div key={idx}>
+                  <Input
+                    placeholder={`Option ${idx + 1}`}
+                    {...register(`options.${idx}`)}
+                  />
+                  {errors.options?.[idx] && (
+                    <p className="text-sm text-red-500">
+                      {errors.options[idx]?.message}
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            <Button type="submit" className="w-full mt-4 font-semibold">
+              Launch Quiz
+            </Button>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {results.length > 0 && (
+        <div>
+          <h4 className="font-semibold">Quiz Results (Real-time):</h4>
+          <ul className="list-disc pl-4">
+            {results.map(({ userId, answer }, idx) => (
+              <li key={idx}>
+                User <b>{userId}</b> answered: {answer}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </div>
   );
 };

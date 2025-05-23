@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
-import { Navigate, Outlet } from "react-router-dom";
+import { Navigate } from "react-router-dom";
 import axios from "axios";
 
-const ProtectedRoute = ({ role = "user" }) => {
+const ProtectedRoute = ({ allowed = [], children }) => {
   const [isAuthorized, setIsAuthorized] = useState(null);
   const token = localStorage.getItem("token");
 
@@ -22,24 +22,26 @@ const ProtectedRoute = ({ role = "user" }) => {
 
         const userRole = res.data.role;
 
-        if (userRole === role) {
+        if (allowed.includes(userRole)) {
           setIsAuthorized(true);
         } else {
+          localStorage.removeItem("token");
           setIsAuthorized(false);
         }
       } catch (err) {
+        localStorage.removeItem("token");
         setIsAuthorized(false);
       }
     };
 
     verifyToken();
-  }, [token, role]);
+  }, [token, allowed]);
 
   if (isAuthorized === null) return null;
 
   if (!isAuthorized) return <Navigate to="/login" replace />;
 
-  return <Outlet />;
+  return children;
 };
 
 export default ProtectedRoute;

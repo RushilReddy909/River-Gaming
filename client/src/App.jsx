@@ -5,13 +5,29 @@ import { Route, Routes } from "react-router-dom";
 import ProtectedRoute from "./components/ProtectedRoute";
 import HomePage from "./pages/HomePage";
 import AdminPage from "./pages/AdminPage";
+import Sidebar from "./components/AppSidebar";
 
 const App = () => {
   return (
     <Routes>
-      <Route element={<ProtectedRoute />}>
+      <Route
+        element={
+          <ProtectedRoute allowed={["user", "admin"]}>
+            {" "}
+            <Sidebar role={"user"} />{" "}
+          </ProtectedRoute>
+        }
+      >
         <Route path="/" element={<HomePage />} />
-        <Route path="/admin" element={<AdminPage />} role="admin" />
+      </Route>
+      <Route
+        element={
+          <ProtectedRoute allowed={["admin"]}>
+            <Sidebar role={"admin"} />{" "}
+          </ProtectedRoute>
+        }
+      >
+        <Route path="/admin" element={<AdminPage />} />
       </Route>
       <Route path={"/login"} element={<LoginPage />} />
       <Route path={"/register"} element={<RegisterPage />} />

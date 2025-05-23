@@ -6,17 +6,17 @@ const streamSocketHandler = (io) => {
 
     socket.on("join_stream", async ({ streamId, userId }) => {
       try {
-        const stream = await Stream.findOne({ streamId });
+        const stream = await Stream.findOneAndUpdate(
+          { streamId },
+          { $addToSet: { viewers: socket.id } },
+          { new: true }
+        );
+
         if (!stream) {
           return socket.emit("error", "Stream not found");
         }
 
         socket.join(streamId);
-
-        if (!stream.viewers.includes(socket.id)) {
-          stream.viewers.push(socket.id);
-          await stream.save();
-        }
 
         io.to(streamId).emit("viewer_count_update", {
           viewerCount: stream.viewers.length,
@@ -34,10 +34,6 @@ const streamSocketHandler = (io) => {
         if (stream) {
           stream.viewers = stream.viewers.filter((id) => id !== socket.id);
           await stream.save();
-
-          io.to(streamId).emit("viewer_count_update", {
-            viewerCount: stream.viewers.length,
-          });
         }
       } catch (err) {
         console.error("leave_stream error:", err);
@@ -46,13 +42,17 @@ const streamSocketHandler = (io) => {
 
     socket.on("disconnecting", async () => {
       try {
-        const rooms = Array.from(socket.rooms);
+        const rooms = Array.from(socket.rooms).filter(
+          (room) => room !== socket.id
+        );
         for (const room of rooms) {
-          const stream = await Stream.findOne({ streamId: room });
-          if (stream) {
-            stream.viewers = stream.viewers.filter((id) => id !== socket.id);
-            await stream.save();
+          const stream = await Stream.findOneAndUpdate(
+            { streamId: room },
+            { $pull: { viewers: socket.id } },
+            { new: true }
+          );
 
+          if (stream) {
             io.to(room).emit("viewer_count_update", {
               viewerCount: stream.viewers.length,
             });

@@ -53,6 +53,7 @@ const LoginPage = () => {
           navigate("/");
         }
       } catch (err) {
+        localStorage.removeItem("token");
         toast.error("Token could not be verified or expired, please login");
         setVerify(false);
       }

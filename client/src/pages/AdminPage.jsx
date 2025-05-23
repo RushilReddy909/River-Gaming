@@ -1,36 +1,25 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
 import { io } from "socket.io-client";
+import { CircleArrowLeft } from "lucide-react";
+import AdminQuiz from "@/components/AdminQuiz";
+import { Button } from "@/components/ui/button";
+import useStreamStore from "../store/streamStore";
+import { Card } from "@/components/ui/card";
 
 const SOCKET_SERVER_URL = "http://localhost:5000";
 
-const AdminPanel = () => {
-  const [streamId, setStreamId] = useState("");
+const AdminPage = () => {
+  const [selectedStream, setSelectedStream] = useState(null);
   const [viewerCount, setViewerCount] = useState(0);
   const [socket, setSocket] = useState(null);
+  const { streams, fetchStreams } = useStreamStore();
 
-  // Quiz states
-  const [question, setQuestion] = useState("");
-  const [options, setOptions] = useState(["", "", "", ""]);
-
-  // Create a new stream
-  const createStream = async () => {
-    try {
-      const res = await axios.post(
-        "http://localhost:5000/admin/create-stream"
-      );
-      setStreamId(res.data.streamId);
-      setViewerCount(0);
-      alert(`Stream created: ${res.data.streamId}`);
-    } catch (err) {
-      console.error(err);
-      alert("Failed to create stream");
-    }
-  };
-
-  // Connect to Socket.IO once streamId is set
   useEffect(() => {
-    if (!streamId) return;
+    fetchStreams();
+  }, []);
+
+  useEffect(() => {
+    if (!selectedStream) return;
 
     const socketClient = io(SOCKET_SERVER_URL);
 
@@ -38,81 +27,93 @@ const AdminPanel = () => {
       console.log("Admin socket connected");
     });
 
-    // Listen for viewer count updates
     socketClient.on("viewer_count_update", ({ viewerCount }) => {
       setViewerCount(viewerCount);
     });
 
     setSocket(socketClient);
+    socketClient.emit("join_stream", selectedStream.streamId);
 
     return () => {
       socketClient.disconnect();
       setSocket(null);
+      setViewerCount(0);
     };
-  }, [streamId]);
+  }, [selectedStream]);
 
-  // Emit start quiz
-  const startQuiz = () => {
-    if (!question || options.some((opt) => !opt)) {
-      alert("Please fill all quiz fields");
-      return;
-    }
+  if (selectedStream) {
+    return (
+      <div className="p-8">
+        <Button
+          onClick={() => setSelectedStream(null)}
+          className="mb-4 font-semibold flex items-center gap-2"
+        >
+          <CircleArrowLeft />
+          Go Back
+        </Button>
 
-    if (socket) {
-      socket.emit("start_quiz", {
-        streamId,
-        quiz: { question, options },
-      });
-      alert("Quiz started!");
-      setQuestion("");
-      setOptions(["", "", "", ""]);
-    }
-  };
+        <div className="w-full flex justify-between">
+          <div>
+            <h2 className="text-2xl font-bold mb-2">Stream Details</h2>
+            <p>
+              <b>Title:</b> {selectedStream.title}
+            </p>
+            <p>
+              <b>Stream ID:</b> {selectedStream.streamId}
+            </p>
+            <p>
+              <b>Current Viewers:</b> {viewerCount}
+            </p>
+          </div>
+          <div className="flex items-end">
+            <AdminQuiz streamId={selectedStream.streamId} socket={socket} />
+          </div>
+        </div>
 
-  const handleOptionChange = (idx, value) => {
-    const newOptions = [...options];
-    newOptions[idx] = value;
-    setOptions(newOptions);
-  };
+        {selectedStream.youtubeEmbedUrl?.length > 0 && (
+          <div className="flex justify-center items-center my-6">
+            <iframe
+              className="w-full md:w-[80%] h-[500px]"
+              src={selectedStream.youtubeEmbedUrl}
+              allowFullScreen
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              title={selectedStream.title}
+            />
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
-    <div style={{ padding: "2rem" }}>
-      <h2>Admin Panel</h2>
+    <div className="p-8">
+      <p className="text-4xl font-extrabold text-center my-6 text-violet-700 dark:text-purple-300 tracking-tight underline underline-offset-8 decoration-violet-400 dark:decoration-purple-500 decoration-4 drop-shadow-sm">
+        Available Streams
+      </p>
 
-      <button onClick={createStream}>Create New Stream</button>
-
-      {streamId && (
-        <>
-          <p>
-            <b>Stream ID:</b> {streamId}
-          </p>
-          <p>
-            <b>Current Viewers:</b> {viewerCount}
-          </p>
-
-          <h3>Start a Quiz</h3>
-          <input
-            type="text"
-            placeholder="Quiz Question"
-            value={question}
-            onChange={(e) => setQuestion(e.target.value)}
-            style={{ width: "100%", marginBottom: "0.5rem" }}
-          />
-          {options.map((opt, idx) => (
-            <input
-              key={idx}
-              type="text"
-              placeholder={`Option ${idx + 1}`}
-              value={opt}
-              onChange={(e) => handleOptionChange(idx, e.target.value)}
-              style={{ width: "100%", marginBottom: "0.5rem" }}
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mt-4">
+        {streams.length === 0 && <p>No streams available</p>}
+        {streams.map((stream) => (
+          <Card
+            className="p-0 overflow-hidden gap-0 cursor-pointer"
+            key={stream._id}
+            onClick={() => setSelectedStream(stream)}
+          >
+            <img
+              src={
+                stream.thumbnailUrl ||
+                "https://media.istockphoto.com/id/1409329028/vector/no-picture-available-placeholder-thumbnail-icon-illustration-design.jpg?s=612x612&w=0&k=20&c=_zOuJu755g2eEUioiOUdz_mHKJQJn-tDgIAhQzyeKUQ="
+              }
+              alt={stream.title}
+              className="w-full h-[140px] object-cover rounded-sm"
             />
-          ))}
-          <button onClick={startQuiz}>Start Quiz</button>
-        </>
-      )}
+
+            <div className="text-center my-2">{stream.title}</div>
+          </Card>
+        ))}
+      </div>
     </div>
   );
 };
 
-export default AdminPanel;
+export default AdminPage;
