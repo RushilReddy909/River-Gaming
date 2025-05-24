@@ -8,8 +8,13 @@ import authRoutes from "./routes/authRoutes.js";
 import streamRoutes from "./routes/streamRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import streamSocketHandler from "./sockets/streamSocket.js";
+import path from "path";
+import { fileURLToPath } from "url";
 
 dotenv.config();
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const PORT = process.env.PORT || 5000;
 
@@ -29,6 +34,13 @@ app.use(express.json());
 app.use("/api/auth", authRoutes);
 app.use("/api/admin", streamRoutes);
 app.use("/api/user", userRoutes);
+
+const clientPath = path.resolve(__dirname, "../client/dist");
+app.use(express.static(clientPath));
+
+app.get("/{*any}", (req, res) => {
+  res.sendFile(path.join(clientPath, "index.html"));
+});
 
 streamSocketHandler(io);
 
