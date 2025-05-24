@@ -13,12 +13,21 @@ import {
   SidebarTrigger,
 } from "./ui/sidebar";
 import { ModeToggle } from "./mode-toggle";
-import { DollarSign, LogOut, Settings, TvMinimalPlay } from "lucide-react";
+import {
+  BadgeDollarSign,
+  DollarSign,
+  LogOut,
+  Settings,
+  TvMinimalPlay,
+} from "lucide-react";
 import { Outlet, useNavigate } from "react-router-dom";
 import StreamDialog from "./StreamDialog";
 import { Slide, ToastContainer } from "react-toastify";
+import useUserStore from "@/store/userStore";
+import { Button } from "./ui/button";
 
 const AppSidebar = ({ role }) => {
+  const coins = useUserStore((state) => state.coins);
   const navigate = useNavigate();
   return (
     <SidebarProvider>
@@ -68,7 +77,7 @@ const AppSidebar = ({ role }) => {
           <button
             onClick={() => {
               localStorage.removeItem("token");
-              navigate("/");
+              navigate("/login");
             }}
             className="flex justify-center items-center gap-2 px-4 py-2 rounded-md text-red-600 hover:bg-red-600 hover:text-white focus:outline-none focus:ring-2 focus:ring-red-400 transition-colors w-full"
           >
@@ -81,7 +90,13 @@ const AppSidebar = ({ role }) => {
         <header className="sticky top-0 flex justify-between h-16 shrink-0 items-center gap-2 border-b bg-background px-4 z-50">
           <SidebarTrigger />
           <div className="flex gap-2">
-            {role === "admin" && <StreamDialog />}
+            {role === "admin" ? (
+              <StreamDialog />
+            ) : (
+              <Button className={"font-semibold"}>
+                <BadgeDollarSign /> {coins} Coins
+              </Button>
+            )}
             <ModeToggle />
           </div>
         </header>

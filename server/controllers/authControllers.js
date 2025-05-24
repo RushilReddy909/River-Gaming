@@ -107,4 +107,36 @@ const loginUser = async (req, res) => {
   }
 };
 
-export { registerUser, loginUser };
+const getInfo = async (req, res) => {
+  const id = req.user.id;
+
+  try {
+    const data = await authModel.findById(id);
+
+    if (!data) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Info retrieved",
+      data: {
+        id: data._id,
+        coins: data.coins,
+        isFirst: data.isFirst,
+      },
+    });
+  } catch (err) {
+    console.error("getInfo error:", err);
+    return res.status(500).json({
+      success: false,
+      message: "Server Error",
+      error: err.message,
+    });
+  }
+};
+
+export { registerUser, loginUser, getInfo };

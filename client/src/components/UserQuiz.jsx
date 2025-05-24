@@ -14,20 +14,25 @@ import {
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { BadgeDollarSign } from "lucide-react";
 import { Separator } from "./ui/separator";
+import useUserStore from "@/store/userStore";
 
 const quizSchema = z.object({
   question: z.string().min(1),
   options: z.array(z.string().min(1)).nonempty(),
+  correctIndex: z.number().int().min(0).max(3),
 });
 
-const UserQuiz = ({ streamId, userId, socket, onGoBack }) => {
+const UserQuiz = ({ streamId, userId, socket }) => {
   const [quiz, setQuiz] = useState(null);
   const [selectedAnswer, setSelectedAnswer] = useState("");
   const [selectedAmount, setSelectedAmount] = useState(null);
   const [showQuizDialog, setShowQuizDialog] = useState(false);
+  const [answered, setAnswered] = useState(false);
 
   useEffect(() => {
     if (!socket) return;
+
+    const setCoins = useUserStore.getState().setCoins;
 
     const handleQuizQuestion = (quizData) => {
       const result = quizSchema.safeParse(quizData);
@@ -35,6 +40,7 @@ const UserQuiz = ({ streamId, userId, socket, onGoBack }) => {
         setQuiz(result.data);
         setSelectedAnswer("");
         setSelectedAmount(null);
+        setAnswered(false);
         toast.info("New quiz is live! Click 'Answer Quiz' to participate.");
         setShowQuizDialog(false);
       } else {
@@ -43,30 +49,56 @@ const UserQuiz = ({ streamId, userId, socket, onGoBack }) => {
       }
     };
 
-    socket.on("quiz_question", handleQuizQuestion);
+    const handleQuizResults = (data) => {
+      if (data.userId === userId) {
+        if (data.isCorrect) {
+          toast.success(
+            `Correct! You earned ${data.amount * 2} coins. New balance: ${
+              data.newBalance
+            }`
+          );
+        } else {
+          toast.error(
+            `Wrong answer! You lost ${data.amount} coins. New balance: ${data.newBalance}`
+          );
+        }
+        setCoins(data.newBalance);
+      }
+    };
 
-    // Join stream with userId on mount or streamId change
+    const handleCoinUpdateFailed = (data) => {
+      toast.error(
+        data.message || "Coin update failed: Insufficient coins to bet."
+      );
+    };
+
+    socket.on("quiz_question", handleQuizQuestion);
+    socket.on("quiz_results", handleQuizResults);
+    socket.on("coin_update_failed", handleCoinUpdateFailed);
+
     socket.emit("join_stream", { streamId, userId });
 
-    // Cleanup on unmount or dependency change
     return () => {
       socket.off("quiz_question", handleQuizQuestion);
+      socket.off("quiz_results", handleQuizResults);
+      socket.off("coin_update_failed", handleCoinUpdateFailed);
+
       socket.emit("leave_stream", { streamId, userId });
     };
   }, [socket, streamId, userId]);
 
   const submitAnswer = () => {
-    if (selectedAnswer && selectedAmount && socket) {
-      socket.emit("submit_answer", {
-        streamId,
-        userId,
-        answer: selectedAnswer,
-        amount: selectedAmount,
-      });
-      toast.success("Answer submitted!");
-      setQuiz(null);
-      setShowQuizDialog(false);
-    }
+    if (!quiz || !selectedAnswer || !selectedAmount) return;
+
+    socket.emit("submit_answer", {
+      streamId,
+      userId,
+      answer: parseInt(selectedAnswer),
+      amount: selectedAmount,
+    });
+
+    setShowQuizDialog(false);
+    setAnswered(true);
   };
 
   if (!quiz) return null;
@@ -75,7 +107,7 @@ const UserQuiz = ({ streamId, userId, socket, onGoBack }) => {
     <div>
       <Dialog open={showQuizDialog} onOpenChange={setShowQuizDialog}>
         <DialogTrigger asChild>
-          {!showQuizDialog && (
+          {!showQuizDialog && !answered && (
             <Button
               onClick={() => setShowQuizDialog(true)}
               className={"font-semibold"}
@@ -91,7 +123,7 @@ const UserQuiz = ({ streamId, userId, socket, onGoBack }) => {
 
           <RadioGroup
             value={selectedAnswer}
-            onValueChange={setSelectedAnswer}
+            onValueChange={(val) => setSelectedAnswer(val)}
             className="flex flex-col space-y-2 mt-4"
           >
             {quiz.options.map((opt, idx) => (
@@ -99,7 +131,7 @@ const UserQuiz = ({ streamId, userId, socket, onGoBack }) => {
                 key={idx}
                 className="flex items-center cursor-pointer space-x-2"
               >
-                <RadioGroupItem value={opt} id={`option-${idx}`} />
+                <RadioGroupItem value={idx.toString()} id={`option-${idx}`} />
                 <span>{opt}</span>
               </label>
             ))}

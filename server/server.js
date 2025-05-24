@@ -6,6 +6,7 @@ import cors from "cors";
 import connectDB from "./config/connectDB.js";
 import authRoutes from "./routes/authRoutes.js";
 import streamRoutes from "./routes/streamRoutes.js";
+import userRoutes from "./routes/userRoutes.js";
 import streamSocketHandler from "./sockets/streamSocket.js";
 
 dotenv.config();
@@ -27,6 +28,7 @@ app.use(express.json());
 
 app.use("/api/auth", authRoutes);
 app.use("/api/admin", streamRoutes);
+app.use("/api/user", userRoutes);
 
 streamSocketHandler(io);
 

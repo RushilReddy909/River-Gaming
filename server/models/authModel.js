@@ -27,8 +27,12 @@ const authSchema = new mongoose.Schema(
     coins: {
       type: Number,
       required: true,
-      default: 0,
+      default: 50,
       min: 0,
+    },
+    isFirst: {
+      type: Boolean,
+      default: true,
     },
   },
   {

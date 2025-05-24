@@ -1,6 +1,6 @@
 import express from "express";
 import { body } from "express-validator";
-import { registerUser, loginUser } from "../controllers/authControllers.js";
+import { registerUser, loginUser, getInfo } from "../controllers/authControllers.js";
 import { verifyToken } from "../middleware/authMiddleware.js";
 
 const registerValidator = [
@@ -59,6 +59,8 @@ const app = express.Router();
 app.post("/register", registerValidator, registerUser);
 
 app.post("/login", loginValidator, loginUser);
+
+app.get("/", verifyToken, getInfo);
 
 app.get("/verify", verifyToken, async (req, res) => {
   return res.status(200).json({

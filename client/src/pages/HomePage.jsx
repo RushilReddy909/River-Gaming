@@ -5,6 +5,9 @@ import UserQuiz from "@/components/UserQuiz";
 import { Button } from "@/components/ui/button";
 import useStreamStore from "../store/streamStore";
 import { Card } from "@/components/ui/card";
+import useUserStore from "../store/userStore";
+import axios from "axios";
+import { toast } from "react-toastify";
 
 const SOCKET_SERVER_URL = "http://localhost:5000";
 
@@ -12,16 +15,22 @@ const HomePage = () => {
   const [selectedStream, setSelectedStream] = useState(null);
   const [socket, setSocket] = useState(null);
   const { streams, fetchStreams } = useStreamStore();
+  const [loading, setLoading] = useState(true);
 
-  // Generate random userId once per session
-  const [userId] = useState(() => "user_" + Math.floor(Math.random() * 10000));
+  const setId = useUserStore((state) => state.setUserId);
+  const setCoins = useUserStore((state) => state.setCoins);
+  const userId = useUserStore((state) => state.userId);
 
-  // Fetch streams on mount
   useEffect(() => {
-    fetchStreams();
+    const loadPage = async () => {
+      setLoading(true);
+      await fetchStreams();
+      setLoading(false);
+    };
+
+    loadPage();
   }, [fetchStreams]);
 
-  // Initialize socket when a stream is selected
   useEffect(() => {
     if (!selectedStream) return;
 
@@ -46,6 +55,43 @@ const HomePage = () => {
       setSocket(null);
     };
   }, [selectedStream, userId]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) return;
+
+        const res = await axios.get("http://localhost:5000/api/auth", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        const { id, coins, isFirst } = res.data.data;
+
+        if (isFirst) {
+          await axios.put(
+            "http://localhost:5000/api/user/first",
+            {},
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          );
+          toast.success("🎉 Welcome! You’ve been awarded 50 bonus coins!");
+        }
+
+        setId(id);
+        setCoins(coins);
+      } catch (err) {
+        console.error("Failed to fetch user info", err);
+      }
+    };
+
+    fetchData();
+  }, []);
 
   if (selectedStream) {
     return (
@@ -91,21 +137,30 @@ const HomePage = () => {
       </p>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-        {streams.length === 0 && <p>No streams available</p>}
-        {streams.map((stream) => (
-          <Card
-            key={stream._id}
-            className="cursor-pointer overflow-hidden p-0 gap-0"
-            onClick={() => setSelectedStream(stream)}
-          >
-            <img
-              src={stream.thumbnailUrl || "https://via.placeholder.com/300x200"}
-              alt={stream.title}
-              className="w-full h-[200px] object-cover"
-            />
-            <div className="py-2 px-4 text-center text-lg">{stream.title}</div>
-          </Card>
-        ))}
+        {loading ? (
+          <p className="text-center w-full">Loading streams...</p>
+        ) : streams.length === 0 ? (
+          <p className="text-center w-full">No streams available</p>
+        ) : (
+          streams.map((stream) => (
+            <Card
+              key={stream._id}
+              className="cursor-pointer overflow-hidden p-0 gap-0"
+              onClick={() => setSelectedStream(stream)}
+            >
+              <img
+                src={
+                  stream.thumbnailUrl || "https://via.placeholder.com/300x200"
+                }
+                alt={stream.title}
+                className="w-full h-[200px] object-cover"
+              />
+              <div className="py-2 px-4 text-center text-lg">
+                {stream.title}
+              </div>
+            </Card>
+          ))
+        )}
       </div>
     </div>
   );
