@@ -9,7 +9,7 @@ import useUserStore from "../store/userStore";
 import axios from "axios";
 import { toast } from "react-toastify";
 
-const SOCKET_SERVER_URL = "http://localhost:5000";
+const SOCKET_SERVER_URL = "/";
 
 const HomePage = () => {
   const [selectedStream, setSelectedStream] = useState(null);
@@ -62,7 +62,7 @@ const HomePage = () => {
         const token = localStorage.getItem("token");
         if (!token) return;
 
-        const res = await axios.get("http://localhost:5000/api/auth", {
+        const res = await axios.get("/api/auth", {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -72,7 +72,7 @@ const HomePage = () => {
 
         if (isFirst) {
           await axios.put(
-            "http://localhost:5000/api/user/first",
+            "/api/user/first",
             {},
             {
               headers: {

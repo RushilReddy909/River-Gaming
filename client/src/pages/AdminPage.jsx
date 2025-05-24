@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import useStreamStore from "../store/streamStore";
 import { Card } from "@/components/ui/card";
 
-const SOCKET_SERVER_URL = "http://localhost:5000";
+const SOCKET_SERVER_URL = "/";
 
 const AdminPage = () => {
   const [selectedStream, setSelectedStream] = useState(null);

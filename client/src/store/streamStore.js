@@ -6,7 +6,7 @@ const useStreamStore = create((set) => ({
   fetchStreams: async () => {
     try {
       const token = localStorage.getItem("token");
-      const res = await axios.get("http://localhost:5000/api/admin/stream", {
+      const res = await axios.get("/api/admin/stream", {
         headers: { Authorization: `Bearer ${token}` },
       });
       set({ streams: res.data.streams });
@@ -17,11 +17,9 @@ const useStreamStore = create((set) => ({
   addStream: async (streamData) => {
     try {
       const token = localStorage.getItem("token");
-      const res = await axios.post(
-        "http://localhost:5000/api/admin/stream",
-        streamData,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const res = await axios.post("/api/admin/stream", streamData, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       set((state) => ({ streams: [...state.streams, res.data] }));
       return res.data;
     } catch (error) {

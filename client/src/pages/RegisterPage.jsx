@@ -53,7 +53,7 @@ const RegisterPage = () => {
           return;
         }
 
-        const res = await axios.get("http://localhost:5000/api/auth/verify", {
+        const res = await axios.get("/api/auth/verify", {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -84,7 +84,7 @@ const RegisterPage = () => {
   const onSubmit = async (values) => {
     try {
       const res = await axios.post(
-        "http://localhost:5000/api/auth/register",
+        "/api/auth/register",
         values
       );
 
