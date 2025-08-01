@@ -35,12 +35,14 @@ app.use("/api/auth", authRoutes);
 app.use("/api/admin", streamRoutes);
 app.use("/api/user", userRoutes);
 
-const clientPath = path.resolve(__dirname, "../client/dist");
-app.use(express.static(clientPath));
+if (process.env.NODE_ENV === "production") {
+  const clientPath = path.resolve(__dirname, "../client/dist");
+  app.use(express.static(clientPath));
 
-app.get("/{*any}", (req, res) => {
-  res.sendFile(path.join(clientPath, "index.html"));
-});
+  app.get("/{*any}", (req, res) => {
+    res.sendFile(path.join(clientPath, "index.html"));
+  });
+}
 
 streamSocketHandler(io);
 

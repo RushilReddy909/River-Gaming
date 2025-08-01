@@ -1,6 +1,9 @@
+// client/src/pages/HomePage.jsx
+
 import React, { useEffect, useState } from "react";
 import { io } from "socket.io-client";
 import { CircleArrowLeft } from "lucide-react";
+import { useParams, useNavigate } from "react-router-dom"; // Import hooks
 import UserQuiz from "@/components/UserQuiz";
 import { Button } from "@/components/ui/button";
 import useStreamStore from "../store/streamStore";
@@ -17,6 +20,9 @@ const HomePage = () => {
   const { streams, fetchStreams } = useStreamStore();
   const [loading, setLoading] = useState(true);
 
+  const { streamId } = useParams(); // Get streamId from URL
+  const navigate = useNavigate(); // For navigation
+
   const setId = useUserStore((state) => state.setUserId);
   const setCoins = useUserStore((state) => state.setCoins);
   const userId = useUserStore((state) => state.userId);
@@ -30,6 +36,19 @@ const HomePage = () => {
 
     loadPage();
   }, [fetchStreams]);
+
+  useEffect(() => {
+    if (streamId && streams.length > 0) {
+      const stream = streams.find((s) => s.streamId === streamId);
+      if (stream) {
+        setSelectedStream(stream);
+      } else {
+        navigate("/");
+      }
+    } else {
+      setSelectedStream(null);
+    }
+  }, [streamId, streams, navigate]);
 
   useEffect(() => {
     if (!selectedStream) return;
@@ -91,14 +110,14 @@ const HomePage = () => {
     };
 
     fetchData();
-  }, []);
+  }, [setId, setCoins]);
 
   if (selectedStream) {
     return (
       <div className="p-6">
         <div className="flex justify-between">
           <Button
-            onClick={() => setSelectedStream(null)}
+            onClick={() => navigate("/")} 
             className="mb-4 font-semibold flex items-center gap-2"
           >
             <CircleArrowLeft />
@@ -146,7 +165,7 @@ const HomePage = () => {
             <Card
               key={stream._id}
               className="cursor-pointer overflow-hidden p-0 gap-0"
-              onClick={() => setSelectedStream(stream)}
+              onClick={() => navigate(`/${stream.streamId}`)} // Navigate to stream's unique path
             >
               <img
                 src={

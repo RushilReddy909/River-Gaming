@@ -76,14 +76,10 @@ const UserQuiz = ({ streamId, userId, socket }) => {
     socket.on("quiz_results", handleQuizResults);
     socket.on("coin_update_failed", handleCoinUpdateFailed);
 
-    socket.emit("join_stream", { streamId, userId });
-
     return () => {
       socket.off("quiz_question", handleQuizQuestion);
       socket.off("quiz_results", handleQuizResults);
       socket.off("coin_update_failed", handleCoinUpdateFailed);
-
-      socket.emit("leave_stream", { streamId, userId });
     };
   }, [socket, streamId, userId]);
 

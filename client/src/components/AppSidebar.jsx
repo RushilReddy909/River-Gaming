@@ -20,7 +20,7 @@ import {
   Settings,
   TvMinimalPlay,
 } from "lucide-react";
-import { Outlet, useNavigate } from "react-router-dom";
+import { Link, Outlet, useNavigate } from "react-router-dom";
 import StreamDialog from "./StreamDialog";
 import { Slide, ToastContainer } from "react-toastify";
 import useUserStore from "@/store/userStore";
@@ -36,7 +36,7 @@ const AppSidebar = ({ role }) => {
           <SidebarMenu>
             <SidebarMenuItem>
               <SidebarMenuButton size="lg" asChild>
-                <a href="/admin">
+                <Link to={role === "admin" ? "/admin" : "/"}>
                   <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
                     {role === "admin" ? <Settings /> : <DollarSign />}
                   </div>
@@ -51,7 +51,7 @@ const AppSidebar = ({ role }) => {
                       <span className="">Watch streams, earn coins</span>
                     </div>
                   )}
-                </a>
+                </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>
@@ -61,13 +61,13 @@ const AppSidebar = ({ role }) => {
             <SidebarMenu>
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
-                  <a
-                    href={role === "admin" ? "/admin" : "/"}
+                  <Link
+                    to={role === "admin" ? "/admin" : "/"}
                     className="!text-[--color-primary] !hover:bg-[--color-primary] !hover:text-white transition-colors rounded-md px-3 py-2"
                   >
                     <TvMinimalPlay />
                     View All Streams
-                  </a>
+                  </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>

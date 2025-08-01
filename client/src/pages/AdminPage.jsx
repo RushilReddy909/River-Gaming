@@ -1,6 +1,9 @@
+// client/src/pages/AdminPage.jsx
+
 import React, { useState, useEffect } from "react";
 import { io } from "socket.io-client";
 import { CircleArrowLeft } from "lucide-react";
+import { useParams, useNavigate } from "react-router-dom"; // Import hooks
 import AdminQuiz from "@/components/AdminQuiz";
 import { Button } from "@/components/ui/button";
 import useStreamStore from "../store/streamStore";
@@ -14,9 +17,25 @@ const AdminPage = () => {
   const [socket, setSocket] = useState(null);
   const { streams, fetchStreams } = useStreamStore();
 
+  const { streamId } = useParams(); // Get streamId from URL
+  const navigate = useNavigate(); // For navigation
+
   useEffect(() => {
     fetchStreams();
-  }, []);
+  }, [fetchStreams]);
+
+  useEffect(() => {
+    if (streamId && streams.length > 0) {
+      const stream = streams.find((s) => s.streamId === streamId);
+      if (stream) {
+        setSelectedStream(stream);
+      } else {
+        navigate("/admin"); // Redirect if stream not found
+      }
+    } else {
+      setSelectedStream(null);
+    }
+  }, [streamId, streams, navigate]);
 
   useEffect(() => {
     if (!selectedStream) return;
@@ -45,7 +64,7 @@ const AdminPage = () => {
     return (
       <div className="p-8">
         <Button
-          onClick={() => setSelectedStream(null)}
+          onClick={() => navigate("/admin")} // Navigate back to admin home
           className="mb-4 font-semibold flex items-center gap-2"
         >
           <CircleArrowLeft />
@@ -97,7 +116,7 @@ const AdminPage = () => {
           <Card
             className="p-0 overflow-hidden gap-0 cursor-pointer"
             key={stream._id}
-            onClick={() => setSelectedStream(stream)}
+            onClick={() => navigate(`/admin/${stream.streamId}`)} // Navigate to stream's unique path
           >
             <img
               src={

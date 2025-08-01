@@ -18,7 +18,7 @@ const App = () => {
           </ProtectedRoute>
         }
       >
-        <Route path="/" element={<HomePage />} />
+        <Route path="/:streamId?" element={<HomePage />} />
       </Route>
       <Route
         element={
@@ -27,7 +27,7 @@ const App = () => {
           </ProtectedRoute>
         }
       >
-        <Route path="/admin" element={<AdminPage />} />
+        <Route path="/admin/:streamId?" element={<AdminPage />} />
       </Route>
       <Route path={"/login"} element={<LoginPage />} />
       <Route path={"/register"} element={<RegisterPage />} />
