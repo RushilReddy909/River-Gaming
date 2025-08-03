@@ -5,10 +5,12 @@
   "description": "",
   "main": "server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "nodemon server/server.js",
-    "start": "node server/server.js",
-    "build": "cd client && npm install --omit=optional && npm run build && cd .. && npm install --omit=optional"
+  "dev": "nodemon server/server.js",
+  "start": "NODE_ENV=production node server/server.js",
+  "install-backend": "npm install",
+  "install-frontend": "cd client && NODE_ENV=development npm install",
+  "build-client": "cd client && npm run build",
+  "build": "npm run install-backend && npm run install-frontend && npm run build-client"
   },
   "author": "Rushil Reddy",
   "license": "ISC",
