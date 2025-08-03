@@ -53,9 +53,7 @@ const UserQuiz = ({ streamId, userId, socket }) => {
       if (data.userId === userId) {
         if (data.isCorrect) {
           toast.success(
-            `Correct! You earned ${data.amount * 2} coins. New balance: ${
-              data.newBalance
-            }`
+            `Correct! You earned ${data.amount} coins. New balance: ${data.newBalance}`
           );
         } else {
           toast.error(

@@ -1,5 +1,3 @@
-// client/src/pages/AdminPage.jsx
-
 import React, { useState, useEffect } from "react";
 import { io } from "socket.io-client";
 import { CircleArrowLeft } from "lucide-react";
@@ -8,14 +6,17 @@ import AdminQuiz from "@/components/AdminQuiz";
 import { Button } from "@/components/ui/button";
 import useStreamStore from "../store/streamStore";
 import { Card } from "@/components/ui/card";
+import useUserStore from "@/store/userStore";
 
-const SOCKET_SERVER_URL = "/";
+const SOCKET_SERVER_URL = import.meta.env.VITE_SOCKET_URL || "/";
 
 const AdminPage = () => {
   const [selectedStream, setSelectedStream] = useState(null);
   const [viewerCount, setViewerCount] = useState(0);
   const [socket, setSocket] = useState(null);
   const { streams, fetchStreams } = useStreamStore();
+  const userId = useUserStore((state) => state.userId);
+  console.log(`User ID: ${userId}`);
 
   const { streamId } = useParams(); // Get streamId from URL
   const navigate = useNavigate(); // For navigation
@@ -51,7 +52,10 @@ const AdminPage = () => {
     });
 
     setSocket(socketClient);
-    socketClient.emit("join_stream", selectedStream.streamId);
+    socketClient.emit("join_stream", {
+      streamId: selectedStream.streamId,
+      userId,
+    });
 
     return () => {
       socketClient.disconnect();
@@ -64,7 +68,10 @@ const AdminPage = () => {
     return (
       <div className="p-8">
         <Button
-          onClick={() => navigate("/admin")} // Navigate back to admin home
+          onClick={() => {
+            setSelectedStream(null);
+            navigate("/admin");
+          }} // Navigate back to admin home
           className="mb-4 font-semibold flex items-center gap-2"
         >
           <CircleArrowLeft />

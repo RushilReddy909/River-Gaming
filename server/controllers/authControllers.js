@@ -71,7 +71,7 @@ const loginUser = async (req, res) => {
     const found = await authModel.findOne({ email: email });
 
     if (!found) {
-      return res.status(400).json({
+      return res.status(404).json({
         success: false,
         message: "Invalid Credentials, please try again",
       });
@@ -127,6 +127,7 @@ const getInfo = async (req, res) => {
         id: data._id,
         coins: data.coins,
         isFirst: data.isFirst,
+        role: data.role,
       },
     });
   } catch (err) {

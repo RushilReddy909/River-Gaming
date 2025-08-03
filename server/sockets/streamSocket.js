@@ -5,78 +5,48 @@ const activeQuizzes = {};
 
 const streamSocketHandler = (io) => {
   io.on("connection", (socket) => {
-    console.log("Socket connected:", socket.id);
-
     socket.on("join_stream", async ({ streamId, userId }) => {
       try {
-        // Add socket.id to stream viewers (avoid duplicates)
-        const stream = await Stream.findOneAndUpdate(
-          { streamId },
-          { $addToSet: { viewers: socket.id } },
-          { new: true }
-        );
-
+        const stream = await Stream.findOne({ streamId });
         if (!stream) {
           return socket.emit("error", "Stream not found");
         }
 
-        // Join the socket.io room for the stream
+        if (!stream.viewers.includes(socket.id)) {
+          stream.viewers.push(socket.id);
+          await stream.save();
+        }
+
         socket.join(streamId);
 
-        // Emit updated viewer count to the room
         io.to(streamId).emit("viewer_count_update", {
           viewerCount: stream.viewers.length,
         });
 
         console.log(
-          `User ${userId} joined stream ${streamId} (socket ${socket.id})`
+          `User ${userId} joined stream ${streamId} on Socket: ${socket.id}`
         );
       } catch (err) {
         console.error("join_stream error:", err);
       }
     });
 
-    socket.on("leave_stream", async ({ streamId }) => {
-      try {
-        const stream = await Stream.findOne({ streamId });
-        if (stream) {
-          // Remove socket.id from viewers array
-          stream.viewers = stream.viewers.filter((id) => id !== socket.id);
-          await stream.save();
-
-          // Emit updated viewer count to the room
-          io.to(streamId).emit("viewer_count_update", {
-            viewerCount: stream.viewers.length,
-          });
-
-          // Make socket leave the room
-          socket.leave(streamId);
-
-          console.log(`Socket ${socket.id} left stream ${streamId}`);
-        }
-      } catch (err) {
-        console.error("leave_stream error:", err);
-      }
-    });
-
     socket.on("disconnecting", async () => {
       try {
-        // Rooms includes socket.id and rooms joined by socket
         const rooms = Array.from(socket.rooms).filter(
           (room) => room !== socket.id
         );
 
         for (const room of rooms) {
-          // Remove socket.id from viewers for each room (stream)
-          const stream = await Stream.findOneAndUpdate(
+          const updatedStream = await Stream.findOneAndUpdate(
             { streamId: room },
             { $pull: { viewers: socket.id } },
             { new: true }
           );
 
-          if (stream) {
+          if (updatedStream) {
             io.to(room).emit("viewer_count_update", {
-              viewerCount: stream.viewers.length,
+              viewerCount: updatedStream.viewers.length,
             });
 
             console.log(
@@ -109,7 +79,7 @@ const streamSocketHandler = (io) => {
 
       const isCorrect = answer === quiz.correctIndex;
 
-      let coinsToUpdate = isCorrect ? amount * 2 : -amount;
+      let coinsToUpdate = isCorrect ? amount : -amount;
 
       try {
         const user = await authModel.findById(userId);

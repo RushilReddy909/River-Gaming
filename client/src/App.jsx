@@ -14,7 +14,7 @@ const App = () => {
         element={
           <ProtectedRoute allowed={["user", "admin"]}>
             {" "}
-            <Sidebar role={"user"} />{" "}
+            <Sidebar />{" "}
           </ProtectedRoute>
         }
       >
@@ -23,7 +23,7 @@ const App = () => {
       <Route
         element={
           <ProtectedRoute allowed={["admin"]}>
-            <Sidebar role={"admin"} />{" "}
+            <Sidebar />{" "}
           </ProtectedRoute>
         }
       >

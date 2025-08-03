@@ -72,12 +72,9 @@ const LoginPage = () => {
 
   const onSubmit = async (values) => {
     try {
-      const res = await axios.post(
-        "/api/auth/login",
-        values
-      );
-
+      const res = await axios.post("/api/auth/login", values);
       localStorage.setItem("token", res.data.token);
+
       navigate("/");
     } catch (err) {
       toast.error(

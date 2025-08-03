@@ -1,5 +1,3 @@
-// client/src/pages/HomePage.jsx
-
 import React, { useEffect, useState } from "react";
 import { io } from "socket.io-client";
 import { CircleArrowLeft } from "lucide-react";
@@ -12,7 +10,7 @@ import useUserStore from "../store/userStore";
 import axios from "axios";
 import { toast } from "react-toastify";
 
-const SOCKET_SERVER_URL = "/";
+const SOCKET_SERVER_URL = import.meta.env.VITE_SOCKET_URL || "/";
 
 const HomePage = () => {
   const [selectedStream, setSelectedStream] = useState(null);
@@ -26,6 +24,7 @@ const HomePage = () => {
   const setId = useUserStore((state) => state.setUserId);
   const setCoins = useUserStore((state) => state.setCoins);
   const userId = useUserStore((state) => state.userId);
+  const setRole = useUserStore((state) => state.setRole);
 
   useEffect(() => {
     const loadPage = async () => {
@@ -66,10 +65,6 @@ const HomePage = () => {
     setSocket(socketClient);
 
     return () => {
-      socketClient.emit("leave_stream", {
-        streamId: selectedStream.streamId,
-        userId,
-      });
       socketClient.disconnect();
       setSocket(null);
     };
@@ -87,7 +82,7 @@ const HomePage = () => {
           },
         });
 
-        const { id, coins, isFirst } = res.data.data;
+        const { id, coins, isFirst, role } = res.data.data;
 
         if (isFirst) {
           await axios.put(
@@ -104,12 +99,14 @@ const HomePage = () => {
 
         setId(id);
         setCoins(coins);
+        setRole(role);
       } catch (err) {
         console.error("Failed to fetch user info", err);
       }
     };
 
     fetchData();
+    console.log(userId);
   }, [setId, setCoins]);
 
   if (selectedStream) {
@@ -117,7 +114,10 @@ const HomePage = () => {
       <div className="p-6">
         <div className="flex justify-between">
           <Button
-            onClick={() => navigate("/")} 
+            onClick={() => {
+              setSelectedStream(null);
+              navigate("/");
+            }}
             className="mb-4 font-semibold flex items-center gap-2"
           >
             <CircleArrowLeft />

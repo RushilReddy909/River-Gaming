@@ -18,6 +18,7 @@ import {
   DollarSign,
   LogOut,
   Settings,
+  ShieldUser,
   TvMinimalPlay,
 } from "lucide-react";
 import { Link, Outlet, useNavigate } from "react-router-dom";
@@ -26,9 +27,12 @@ import { Slide, ToastContainer } from "react-toastify";
 import useUserStore from "@/store/userStore";
 import { Button } from "./ui/button";
 
-const AppSidebar = ({ role }) => {
+const AppSidebar = () => {
   const coins = useUserStore((state) => state.coins);
+  const role = useUserStore((state) => state.role);
+
   const navigate = useNavigate();
+
   return (
     <SidebarProvider>
       <Sidebar variant="floating">
@@ -62,7 +66,7 @@ const AppSidebar = ({ role }) => {
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
                   <Link
-                    to={role === "admin" ? "/admin" : "/"}
+                    to="/"
                     className="!text-[--color-primary] !hover:bg-[--color-primary] !hover:text-white transition-colors rounded-md px-3 py-2"
                   >
                     <TvMinimalPlay />
@@ -70,6 +74,20 @@ const AppSidebar = ({ role }) => {
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
+
+              {role === "admin" && (
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild>
+                    <Link
+                      to="/admin"
+                      className="!text-[--color-primary] !hover:bg-[--color-primary] !hover:text-white transition-colors rounded-md px-3 py-2"
+                    >
+                      <ShieldUser />
+                      Admin Panel
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
             </SidebarMenu>
           </SidebarGroup>
         </SidebarContent>
